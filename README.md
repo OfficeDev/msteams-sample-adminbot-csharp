@@ -31,3 +31,17 @@ This guide is written for an [Azure](https://azure.microsoft.com) oriented as it
 4. Run the Microsoft.Bot.Sample.TeamsAdmin project locally or deploy it on azure.
 5. Update '~\Manifest\manifest.json` and replace "id" and "botId" with your app id.
 6. Sideload this zip into any team of your choice using this [guide](https://msdn.microsoft.com/en-us/microsoft-teams/sideload).
+
+# Contributing
+
+This project welcomes contributions and suggestions.  Most contributions require you to agree to a
+Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
+the rights to use your contribution. For details, visit https://cla.microsoft.com.
+
+When you submit a pull request, a CLA-bot will automatically determine whether you need to provide
+a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the instructions
+provided by the bot. You will only need to do this once across all repos using our CLA.
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
+contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
