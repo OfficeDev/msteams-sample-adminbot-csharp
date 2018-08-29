@@ -60,7 +60,7 @@ namespace TeamsAdmin.Helper
                         // 2. Use the AsDataSet extension method
                         var result = reader.AsDataSet();
                         var table = result.Tables[0]; //get first table from Dataset
-                        table.Rows.RemoveAt(0);// Remvoe Excel Titles
+                        table.Rows.RemoveAt(0);// Remove Excel Titles
                         foreach (DataRow row in table.Rows)
                         {
                             // Skip the first row...
