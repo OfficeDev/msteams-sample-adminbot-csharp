@@ -322,6 +322,70 @@ namespace TeamsAdmin.Helper
         /// </summary>
         /// <param name="accessToken">Access token to validate user</param>
         /// <returns></returns>
+        public async Task<List<GroupInfo>> GetAllTeams(string accessToken)
+        {
+            string endpoint = GraphRootUri + $"/groups?$filter=resourceProvisioningOptions/Any(x:x eq 'Team')&$select=id,displayName";
+
+            using (var client = new HttpClient())
+            {
+                using (var request = new HttpRequestMessage(HttpMethod.Get, endpoint))
+                {
+                    request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                    using (HttpResponseMessage response = await client.SendAsync(request))
+                    {
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var json = JObject.Parse(await response.Content.ReadAsStringAsync());
+                            try
+                            {
+                                var createdGroupInfo = JsonConvert.DeserializeObject<AllTeams>(response.Content.ReadAsStringAsync().Result);
+                                return createdGroupInfo.value;
+                            }
+                            catch (Exception)
+                            {
+                                // Handle edge case.
+                            }
+
+                        }
+                        return null;
+                    }
+                }
+            }
+        }
+
+        public async Task<bool> ArchiveTeamAsync(
+            string accessToken, string teamId)
+        {
+            string endpoint = GraphRootUri + $"teams/{teamId}/archive";
+            var userData = "{ \"shouldSetSpoSiteReadOnlyForMembers\": true }";
+            
+            using (var client = new HttpClient())
+            {
+                using (var request = new HttpRequestMessage(HttpMethod.Post, endpoint))
+                {
+                    request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                    request.Content = new StringContent(userData, Encoding.UTF8, "application/json");
+
+                    using (HttpResponseMessage response = await client.SendAsync(request))
+                    {
+                        if (response.IsSuccessStatusCode)
+                        {
+                            return true;
+                        }
+                        return false;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get the current user's id from their profile.
+        /// </summary>
+        /// <param name="accessToken">Access token to validate user</param>
+        /// <returns></returns>
         public async Task<string> GetUserId(string accessToken, string userEmailId)
         {
             string endpoint = GraphRootUri + $"users/{userEmailId}";

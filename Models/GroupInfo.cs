@@ -33,10 +33,13 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using System.Collections.Generic;
+
 namespace TeamsAdmin.Models
 {
     public class GroupInfo
     {
+        public string id { get; set; }
         public string description { get; set; }
         public string displayName { get; set; }
         public string[] groupTypes { get; set; }
@@ -46,5 +49,10 @@ namespace TeamsAdmin.Models
     }
 
 
+
+    public class AllTeams
+    {
+        public List<GroupInfo> value { get; set; }
+    }
 
 }

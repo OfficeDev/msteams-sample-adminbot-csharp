@@ -33,9 +33,11 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using AdaptiveCards;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Connector;
 using Microsoft.Bot.Connector.Teams.Models;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -46,6 +48,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using TeamsAdmin.Helper;
+using TeamsAdmin.Models;
 
 namespace Microsoft.Bot.Sample.TeamsAdmin.Dialogs
 {
@@ -73,6 +76,10 @@ namespace Microsoft.Bot.Sample.TeamsAdmin.Dialogs
             if (message.Equals("help") || message.Equals("hi") || message.Equals("hello"))
             {
                 await SendHelpMessage(context, activity);
+            }
+            else if (string.IsNullOrEmpty(message) && activity.Value != null)
+            {
+                await HandleActions(context, activity);
             }
             else
             {
@@ -109,6 +116,9 @@ namespace Microsoft.Bot.Sample.TeamsAdmin.Dialogs
                         case "add members/channels":
                             context.UserData.SetValue(LastAction, message);
                             await UpdateTeam(context, activity);
+                            break;
+                        case "archive a team":
+                            await SendArchiveTeamCard(context, activity);
                             break;
                         case "logout":
                             await Signout(context);
@@ -220,6 +230,110 @@ namespace Microsoft.Bot.Sample.TeamsAdmin.Dialogs
                 await SendOAuthCardAsync(context, activity);
             }
         }
+
+        private async Task HandleActions(IDialogContext context, Activity activity)
+        {
+            string type = string.Empty;
+
+            var details = JsonConvert.DeserializeObject<ResponseData>(activity.Value.ToString());
+            if (details.id == null)
+            {
+                await context.PostAsync("Please select at least one team to archive.");
+                return;
+            }
+            var teamsToArchive = details.id.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+
+            var token = await context.GetUserTokenAsync(ConnectionName).ConfigureAwait(false);
+            if (token == null || token.Token == null)
+            {
+                await SendOAuthCardAsync(context, activity);
+                return;
+            }
+            GraphAPIHelper helper = new GraphAPIHelper();
+            var successCount = 0;
+            foreach (var teamId in teamsToArchive)
+            {
+                if (!await helper.ArchiveTeamAsync(token.Token, teamId))
+                {
+                    await context.PostAsync("Failed to archive team with teamId: " + teamId);
+                }
+                else successCount++;
+            }
+
+            ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
+            var reply = activity.CreateReply();
+
+            var Card = new AdaptiveCard()
+            {
+                Body = new List<AdaptiveElement>()
+                          {
+                              new AdaptiveTextBlock(){Text="Archive Team",Size=AdaptiveTextSize.Large, Weight = AdaptiveTextWeight.Bolder },
+                              new AdaptiveTextBlock(){Text=$"Archive complete. Successful count: {successCount}"},
+                          }
+            };
+
+            var attachment = new Attachment()
+            {
+                ContentType = AdaptiveCard.ContentType,
+                Content = Card
+            };
+
+            reply.Attachments.Add(attachment);
+
+            await connector.Conversations.UpdateActivityAsync(activity.Conversation.Id, activity.ReplyToId, reply);
+
+            // await context.Update(reply);
+        }
+
+        private async Task SendArchiveTeamCard(IDialogContext context, Activity activity)
+        {
+            var token = await context.GetUserTokenAsync(ConnectionName).ConfigureAwait(false);
+            if (token != null && token.Token != null)
+            {
+                GraphAPIHelper helper = new GraphAPIHelper();
+                var allTeams = await helper.GetAllTeams(token.Token);
+
+                var durations = new List<AdaptiveChoice>();
+
+                foreach (var team in allTeams)
+                {
+                    durations.Add(new AdaptiveChoice() { Title = team.displayName, Value = team.id });
+                }
+
+                var Card = new AdaptiveCard()
+                {
+                    Body = new List<AdaptiveElement>()
+                          {
+                              new AdaptiveTextBlock(){Text="Archive Team",Size=AdaptiveTextSize.Large, Weight = AdaptiveTextWeight.Bolder },
+                              new AdaptiveTextBlock(){Text="Please select teams to archive:"},
+                              new AdaptiveChoiceSetInput(){Id="id", Choices=durations , IsMultiSelect=true, Style=AdaptiveChoiceInputStyle.Compact,IsRequired=true}
+                          },
+                    Actions = new List<AdaptiveAction>()
+                          {
+                              new AdaptiveSubmitAction()
+                              {
+                                  Title="Archive Team",
+                              }
+                          }
+                };
+
+                var attachment = new Attachment()
+                {
+                    ContentType = AdaptiveCard.ContentType,
+                    Content = Card
+                };
+
+                Activity reply = activity.CreateReply();
+                reply.Attachments.Add(attachment);
+                await context.PostAsync(reply);
+            }
+            else
+            {
+                await SendOAuthCardAsync(context, activity);
+            }
+
+        }
+
         #endregion
 
         #region Static Helpers
@@ -280,6 +394,16 @@ namespace Microsoft.Bot.Sample.TeamsAdmin.Dialogs
 
             card.Buttons.Add(new CardAction
             {
+                Title = "Archive a team",
+                DisplayText = "Archive a team",
+                Type = ActionTypes.MessageBack,
+                Text = "Archive a team",
+                Value = "Archive a Team"
+
+            });
+
+            card.Buttons.Add(new CardAction
+            {
                 Title = "Add Members/Channels to existing team",
                 DisplayText = "Add Members/Channels",
                 Type = ActionTypes.MessageBack,
@@ -287,6 +411,7 @@ namespace Microsoft.Bot.Sample.TeamsAdmin.Dialogs
                 Value = "Add New Members"
 
             });
+            
             return card;
         }
         #endregion
