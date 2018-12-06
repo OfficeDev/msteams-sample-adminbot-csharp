@@ -378,7 +378,7 @@ namespace Microsoft.Bot.Sample.TeamsAdmin.Dialogs
                 Title = "Welcome to Teams Creation Bot",
                 Subtitle = "Your aide in creating & managing teams",
                 Text = @"Use the bot for following 
-                        <ol><li>Create a new team by uploading excel file with memeber details</li><li>Add new members to an existing team</li></ol>",
+                        <ol><li>Create a new team by uploading excel file with memeber details</li><li>Archive an existing team</li><li>Add new members to an existing team</li></ol>",
                 Buttons = new List<CardAction>(),
             };
 
@@ -447,7 +447,7 @@ namespace Microsoft.Bot.Sample.TeamsAdmin.Dialogs
                     {
                         try
                         {
-                            await context.PostAsync($"You are successfully signed in. Now, you can use create team command.");
+                            await context.PostAsync($"You are successfully signed in. Now, you can use help or hi command to get started.");
                         }
                         catch (Exception ex)
                         {
