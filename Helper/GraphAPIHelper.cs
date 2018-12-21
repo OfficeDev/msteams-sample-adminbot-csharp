@@ -49,7 +49,7 @@ using TeamsAdmin.Models;
 namespace TeamsAdmin.Helper
 {
     /// <summary>
-    /// Provides all the functionality for Microsft Teams Graph APIs
+    /// Provides all the functionality for Microsoft Teams Graph APIs
     /// </summary>
     public class GraphAPIHelper
     {
