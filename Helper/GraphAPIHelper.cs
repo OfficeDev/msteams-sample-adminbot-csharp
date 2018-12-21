@@ -246,7 +246,7 @@ namespace TeamsAdmin.Helper
                         if (response.IsSuccessStatusCode)
                         {
 
-                            var createdGroupInfo = JsonConvert.DeserializeObject<ResponseData>(response.Content.ReadAsStringAsync().Result);
+                            var createdGroupInfo = JsonConvert.DeserializeObject<ResponseData>(await response.Content.ReadAsStringAsync());
                             return createdGroupInfo.id;
                         }
                         return null;
@@ -270,7 +270,7 @@ namespace TeamsAdmin.Helper
                         if (response.IsSuccessStatusCode)
                         {
 
-                            var createdGroupInfo = JsonConvert.DeserializeObject<ResponseData>(response.Content.ReadAsStringAsync().Result);
+                            var createdGroupInfo = JsonConvert.DeserializeObject<ResponseData>(await response.Content.ReadAsStringAsync());
                             return createdGroupInfo.id;
                         }
                         return null;
