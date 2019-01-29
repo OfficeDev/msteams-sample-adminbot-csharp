@@ -33,6 +33,7 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using Newtonsoft.Json;
 using System.Collections.Generic;
 
 namespace TeamsAdmin.Models
@@ -46,9 +47,10 @@ namespace TeamsAdmin.Models
         public bool mailEnabled { get; set; }
         public string mailNickname { get; set; }
         public bool securityEnabled { get; set; }
+
+        [JsonProperty(PropertyName = "owners@odata.bind")]
+        public string[] Owners { get; set; }
     }
-
-
 
     public class AllTeams
     {

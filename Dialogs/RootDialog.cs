@@ -292,10 +292,10 @@ namespace Microsoft.Bot.Sample.TeamsAdmin.Dialogs
             {
                 GraphAPIHelper helper = new GraphAPIHelper();
                 var allTeams = await helper.GetAllTeams(token.Token);
-
+                var getAllNonArchivedTeams = await helper.GetAllNonArchivedTeams(token.Token, allTeams);
                 var durations = new List<AdaptiveChoice>();
 
-                foreach (var team in allTeams)
+                foreach (var team in getAllNonArchivedTeams)
                 {
                     durations.Add(new AdaptiveChoice() { Title = team.displayName, Value = team.id });
                 }
