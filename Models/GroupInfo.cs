@@ -33,18 +33,28 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using Newtonsoft.Json;
+using System.Collections.Generic;
+
 namespace TeamsAdmin.Models
 {
     public class GroupInfo
     {
+        public string id { get; set; }
         public string description { get; set; }
         public string displayName { get; set; }
         public string[] groupTypes { get; set; }
         public bool mailEnabled { get; set; }
         public string mailNickname { get; set; }
         public bool securityEnabled { get; set; }
+
+        [JsonProperty(PropertyName = "owners@odata.bind")]
+        public string[] Owners { get; set; }
     }
 
-
+    public class AllTeams
+    {
+        public List<GroupInfo> value { get; set; }
+    }
 
 }

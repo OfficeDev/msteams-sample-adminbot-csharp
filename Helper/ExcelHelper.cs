@@ -66,8 +66,14 @@ namespace TeamsAdmin.Helper
                             // Skip the first row...
                             NewTeamDetails teamDetails = new NewTeamDetails();
                             teamDetails.TeamName = row[0].ToString();
-                            teamDetails.ChannelNames = row[1].ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(channel => channel.Trim()).ToList();
-                            teamDetails.MemberEmails = row[2].ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(user => user.Trim()).ToList();
+                            teamDetails.ChannelNames = row[1].ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).
+                                Select(channel => channel.Trim()).ToList();
+                            teamDetails.MemberEmails = row[2].ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).
+                                Select(user => user.Trim()).ToList();
+
+                            // Delete empty entries
+                            teamDetails.ChannelNames = teamDetails.ChannelNames.Where(m => !string.IsNullOrWhiteSpace(m)).Distinct().ToList();
+                            teamDetails.MemberEmails = teamDetails.MemberEmails.Where(m => !string.IsNullOrWhiteSpace(m)).Distinct().ToList();
 
                             teamDetailsList.Add(teamDetails);
                         }

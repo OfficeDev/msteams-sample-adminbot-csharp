@@ -40,6 +40,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -59,7 +60,7 @@ namespace TeamsAdmin.Helper
         {
             foreach (var teamDetails in teamDetailsList)
             {
-                var groupId = await CreateGroupAsyn(token, teamDetails.TeamName);
+                var groupId = await CreateGroupAsyn(token, teamDetails.TeamName, teamDetails.MemberEmails.FirstOrDefault());
                 if (IsValidGuid(groupId))
                 {
                     await context.PostAsync($"Created O365 group for '{teamDetails.TeamName}'. Now, creating team which may take some time.");
@@ -118,8 +119,8 @@ namespace TeamsAdmin.Helper
                         await context.PostAsync($"Failed to create '{channelName}' channel in '{teamDetails.TeamName}' team.");
                 }
 
-                // Add users:
-                foreach (var memberEmailId in teamDetails.MemberEmails)
+                // Add remaining as team members:
+                foreach (var memberEmailId in teamDetails.MemberEmails.Skip(1))
                 {
                     var result = await AddUserToTeam(token, teamId, memberEmailId);
 
@@ -145,7 +146,9 @@ namespace TeamsAdmin.Helper
         private async Task<bool> AddUserToTeam(string token, string teamId, string userEmailId)
         {
             var userId = await GetUserId(token, userEmailId);
-            return await AddTeamMemberAsync(token, teamId, userId);
+            if (userId  != null)
+                return await AddTeamMemberAsync(token, teamId, userId);
+            return false;
         }
 
         bool IsValidGuid(string guid)
@@ -169,10 +172,10 @@ namespace TeamsAdmin.Helper
         }
 
         public async Task<string> CreateGroupAsyn(
-            string accessToken, string groupName)
+            string accessToken, string groupName, string groupOwnerEmailId)
         {
             string endpoint = GraphRootUri + "groups/";
-
+            var ownerId = await GetUserId(accessToken, groupOwnerEmailId);
             GroupInfo groupInfo = new GroupInfo()
             {
                 description = "Team for " + groupName,
@@ -180,7 +183,8 @@ namespace TeamsAdmin.Helper
                 groupTypes = new string[] { "Unified" },
                 mailEnabled = true,
                 mailNickname = groupName.Replace(" ", "").Replace("-", "") + DateTime.Now.Second,
-                securityEnabled = true
+                securityEnabled = true,
+                Owners = new string[] { $"https://graph.microsoft.com/v1.0/users/{ownerId}" }
             };
 
             return await PostRequest(accessToken, endpoint, JsonConvert.SerializeObject(groupInfo));
@@ -192,7 +196,7 @@ namespace TeamsAdmin.Helper
         {
             string endpoint = GraphRootUri + $"groups/{teamId}/members/$ref";
 
-            var userData = $"{{ \"@odata.id\": \"https://graph.microsoft.com/beta/directoryObjects/{userId}\" }}";
+            var userData = $"{{ \"@odata.id\": \"https://graph.microsoft.com/v1.0/directoryObjects/{userId}\" }}";
 
             using (var client = new HttpClient())
             {
@@ -317,6 +321,110 @@ namespace TeamsAdmin.Helper
             }
         }
 
+        public async Task<List<GroupInfo>> GetAllNonArchivedTeams(string token, List<GroupInfo> allTeams)
+        {
+            var activeTeam = new List<GroupInfo>();
+            foreach (var team in allTeams)
+            {
+                if (!await IsArchivedTeam(token, team.id))
+                    activeTeam.Add(team);
+            }
+            return activeTeam;
+        }
+
+        /// <summary>
+        /// Get the current user's id from their profile.
+        /// </summary>
+        /// <param name="accessToken">Access token to validate user</param>
+        /// <returns></returns>
+        public async Task<bool> IsArchivedTeam(string accessToken, string teamId)
+        {
+            string endpoint = GraphRootUri + $"teams/{teamId}?$select=isArchived";
+            using (var client = new HttpClient())
+            {
+                using (var request = new HttpRequestMessage(HttpMethod.Get, endpoint))
+                {
+                    request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                    using (HttpResponseMessage response = await client.SendAsync(request))
+                    {
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var json = JObject.Parse(await response.Content.ReadAsStringAsync());
+                            var isArchived = bool.Parse(json.GetValue("isArchived").ToString());
+                            return isArchived;
+                        }
+                        return false;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Get the current user's id from their profile.
+        /// </summary>
+        /// <param name="accessToken">Access token to validate user</param>
+        /// <returns></returns>
+        public async Task<List<GroupInfo>> GetAllTeams(string accessToken)
+        {
+            string endpoint = GraphRootUri + $"/groups?$filter=resourceProvisioningOptions/Any(x:x eq 'Team')&$select=id,displayName";
+
+            using (var client = new HttpClient())
+            {
+                using (var request = new HttpRequestMessage(HttpMethod.Get, endpoint))
+                {
+                    request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                    using (HttpResponseMessage response = await client.SendAsync(request))
+                    {
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var json = JObject.Parse(await response.Content.ReadAsStringAsync());
+                            try
+                            {
+                                var createdGroupInfo = JsonConvert.DeserializeObject<AllTeams>(response.Content.ReadAsStringAsync().Result);
+                                return createdGroupInfo.value;
+                            }
+                            catch (Exception)
+                            {
+                                // Handle edge case.
+                            }
+
+                        }
+                        return null;
+                    }
+                }
+            }
+        }
+
+        public async Task<bool> ArchiveTeamAsync(
+            string accessToken, string teamId)
+        {
+            string endpoint = GraphRootUri + $"teams/{teamId}/archive";
+            var userData = "{ \"shouldSetSpoSiteReadOnlyForMembers\": false }";
+
+            using (var client = new HttpClient())
+            {
+                using (var request = new HttpRequestMessage(HttpMethod.Post, endpoint))
+                {
+                    request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                    request.Content = new StringContent(userData, Encoding.UTF8, "application/json");
+
+                    using (HttpResponseMessage response = await client.SendAsync(request))
+                    {
+                        if (response.IsSuccessStatusCode)
+                        {
+                            return true;
+                        }
+                        return false;
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Get the current user's id from their profile.
         /// </summary>
@@ -340,7 +448,7 @@ namespace TeamsAdmin.Helper
                         if (response.IsSuccessStatusCode)
                         {
                             var json = JObject.Parse(await response.Content.ReadAsStringAsync());
-                            userId = json.GetValue("id").ToString();
+                            userId = json.GetValue("id")?.ToString();
                         }
                         return userId?.Trim();
                     }
