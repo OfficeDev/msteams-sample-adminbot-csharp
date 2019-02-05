@@ -36,6 +36,7 @@
 using AdaptiveCards;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Connector;
+using Microsoft.Bot.Connector.Teams;
 using Microsoft.Bot.Connector.Teams.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -132,6 +133,14 @@ namespace Microsoft.Bot.Sample.TeamsAdmin.Dialogs
             }
         }
 
+        private static async Task<string> GetUserEmailId(Activity activity)
+        {
+            // Fetch the members in the current conversation
+            ConnectorClient connector = new ConnectorClient(new Uri(activity.ServiceUrl));
+            var members = await connector.Conversations.GetConversationMembersAsync(activity.Conversation.Id);
+            return members.Where(m => m.Id == activity.From.Id).First().AsTeamsChannelAccount().Email;
+        }
+
         #region Action Handlers
 
         private static async Task HandleExcelAttachement(IDialogContext context, Activity activity, TokenResponse token, Attachment attachment)
@@ -154,7 +163,8 @@ namespace Microsoft.Bot.Sample.TeamsAdmin.Dialogs
                     }
                     if (File.Exists(filePath))
                     {
-                        var teamDetails = ExcelHelper.GetAddTeamDetails(filePath);
+                        string EmailId = await GetUserEmailId(activity);
+                        var teamDetails = ExcelHelper.GetAddTeamDetails(filePath,EmailId);
                         if (teamDetails == null)
                         {
                             await context.PostAsync($"Attachment received but unfortunately we are not able to read your excel file. Please make sure that all the colums are correct.");

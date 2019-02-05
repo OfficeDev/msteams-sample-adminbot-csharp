@@ -48,7 +48,7 @@ namespace TeamsAdmin.Helper
     /// </summary>
     public static class ExcelHelper
     {
-        public static List<NewTeamDetails> GetAddTeamDetails(string strFilePath)
+        public static List<NewTeamDetails> GetAddTeamDetails(string strFilePath, string EmailId)
         {
             var teamDetailsList = new List<NewTeamDetails>();
             try
@@ -68,13 +68,18 @@ namespace TeamsAdmin.Helper
                             teamDetails.TeamName = row[0].ToString();
                             teamDetails.ChannelNames = row[1].ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).
                                 Select(channel => channel.Trim()).ToList();
-                            teamDetails.MemberEmails = row[2].ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).
-                                Select(user => user.Trim()).ToList();
+                            string DomainName = EmailId.Split('@').LastOrDefault();
+                            //if(UserEmailId[1].Contains())
+                            var allmembers = row[2].ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).
+                                                Select(user => user.Trim()).ToList();
 
+                            teamDetails.MemberEmails = allmembers.Where(g => g.Contains(DomainName)).ToList();
+
+                            teamDetails.GuestEmails = allmembers.Except(teamDetails.MemberEmails).ToList();
                             // Delete empty entries
                             teamDetails.ChannelNames = teamDetails.ChannelNames.Where(m => !string.IsNullOrWhiteSpace(m)).Distinct().ToList();
                             teamDetails.MemberEmails = teamDetails.MemberEmails.Where(m => !string.IsNullOrWhiteSpace(m)).Distinct().ToList();
-
+                            teamDetails.GuestEmails = teamDetails.GuestEmails.Where(m => !string.IsNullOrWhiteSpace(m)).Distinct().ToList();
                             teamDetailsList.Add(teamDetails);
                         }
                         // The result of each spreadsheet is in result.Tables
