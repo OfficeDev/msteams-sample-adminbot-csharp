@@ -48,7 +48,7 @@ namespace TeamsAdmin.Helper
     /// </summary>
     public static class ExcelHelper
     {
-        public static List<NewTeamDetails> GetAddTeamDetails(string strFilePath, string EmailId)
+        public static List<NewTeamDetails> GetAddTeamDetails(string strFilePath, string domainName)
         {
             var teamDetailsList = new List<NewTeamDetails>();
             try
@@ -68,12 +68,12 @@ namespace TeamsAdmin.Helper
                             teamDetails.TeamName = row[0].ToString();
                             teamDetails.ChannelNames = row[1].ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).
                                 Select(channel => channel.Trim()).ToList();
-                            string DomainName = EmailId.Split('@').LastOrDefault();
+                            
                             //if(UserEmailId[1].Contains())
                             var allmembers = row[2].ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).
                                                 Select(user => user.Trim()).ToList();
-
-                            teamDetails.MemberEmails = allmembers.Where(g => g.Contains(DomainName)).ToList();
+                            //Checking Domain Name
+                            teamDetails.MemberEmails = allmembers.Where(g => g.Contains(domainName)).ToList();
 
                             teamDetails.GuestEmails = allmembers.Except(teamDetails.MemberEmails).ToList();
                             // Delete empty entries

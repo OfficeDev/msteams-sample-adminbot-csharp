@@ -163,8 +163,9 @@ namespace Microsoft.Bot.Sample.TeamsAdmin.Dialogs
                     }
                     if (File.Exists(filePath))
                     {
-                        string EmailId = await GetUserEmailId(activity);
-                        var teamDetails = ExcelHelper.GetAddTeamDetails(filePath,EmailId);
+                        string emailId = await GetUserEmailId(activity);
+                        string domainName = emailId.Split('@').LastOrDefault();
+                        var teamDetails = ExcelHelper.GetAddTeamDetails(filePath, domainName);
                         if (teamDetails == null)
                         {
                             await context.PostAsync($"Attachment received but unfortunately we are not able to read your excel file. Please make sure that all the colums are correct.");

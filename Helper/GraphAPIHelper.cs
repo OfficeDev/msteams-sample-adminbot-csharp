@@ -60,7 +60,7 @@ namespace TeamsAdmin.Helper
         {
             foreach (var teamDetails in teamDetailsList)
             {
-                if (teamDetails.MemberEmails.Count > 0)
+                if (teamDetails.MemberEmails.Count>0)
                 {
                     var groupId = await CreateGroupAsyn(token, teamDetails.TeamName, teamDetails.MemberEmails.FirstOrDefault());
                     if (IsValidGuid(groupId))
@@ -142,7 +142,7 @@ namespace TeamsAdmin.Helper
                     var result = await AddGuestUserTeam(token, teamId, guestMemberId);
 
                     if (!result)
-                        await context.PostAsync($"Failed to add {guestMemberId} to {teamDetails.TeamName}. Check if user is already part of this team.");
+                        await context.PostAsync($"Failed to send invitation to {guestMemberId}");
                 }
 
                 await context.PostAsync($"Channels, Members Added successfully for '{teamDetails.TeamName}' team.");
@@ -177,9 +177,19 @@ namespace TeamsAdmin.Helper
             }
             else 
             {
-                var guestUserId = await GuestUserId(token, userEmailId);
-                return await AddTeamMemberAsync(token, teamId,guestUserId);
+                var guestUserId = await GetGuestUserId(token, userEmailId);
+                if (guestUserId != null)
+                {
+                    return await AddTeamMemberAsync(token, teamId, guestUserId);
+                }
+                else
+                {
+                    return false;
+                }
+                
+
             }
+            
             
         }
 
@@ -291,7 +301,7 @@ namespace TeamsAdmin.Helper
             }
         }
 
-        private static async Task<string> GuestPostRequest(string accessToken, string endpoint, string groupInfo)
+        private static async Task<string> SendInvitationToGuestUser(string accessToken, string endpoint, string groupInfo)
         {
             using (var client = new HttpClient())
             {
@@ -513,7 +523,7 @@ namespace TeamsAdmin.Helper
         }
 
 
-        public async Task<string> GuestUserId(
+        public async Task<string> GetGuestUserId(
            string accessToken, string userEmailId)
         {
             string endpoint = GraphRootUri + "invitations";
@@ -527,7 +537,7 @@ namespace TeamsAdmin.Helper
                     customizedMessageBody="Welcome to Teams"
                 }
             };
-            return await GuestPostRequest(accessToken, endpoint, JsonConvert.SerializeObject(objInvitation));
+            return await SendInvitationToGuestUser(accessToken, endpoint, JsonConvert.SerializeObject(objInvitation));
         }
 
     }
