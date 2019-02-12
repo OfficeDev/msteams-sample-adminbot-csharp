@@ -307,7 +307,8 @@ namespace TeamsAdmin.Helper
                         {
 
                             var GuestUserInfo = JsonConvert.DeserializeObject<InvitationResponse>(await response.Content.ReadAsStringAsync());
-                            return GuestUserInfo.invitedUser.id;
+                            if(GuestUserInfo!=null)
+                                return GuestUserInfo.invitedUser.id;
                         }
                         return null;
                     }
