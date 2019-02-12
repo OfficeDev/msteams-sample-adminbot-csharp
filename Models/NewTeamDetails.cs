@@ -42,5 +42,6 @@ namespace TeamsAdmin.Models
         public string TeamName { get; set; }
         public List<string> ChannelNames { get; set; } = new List<string>();
         public List<string> MemberEmails { get; set; } = new List<string>();
+        public List<string> GuestEmails { get; set; } = new List<string>();
     }
 }

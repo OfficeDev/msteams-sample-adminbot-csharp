@@ -57,4 +57,31 @@ namespace TeamsAdmin.Models
         public List<GroupInfo> value { get; set; }
     }
 
+    public class InvitationRequest
+    {
+        public string invitedUserEmailAddress { get; set; }
+        public string inviteRedirectUrl { get; set; }
+        public bool sendInvitationMessage { get; set; }
+        public Invitedusermessageinfo invitedUserMessageInfo { get; set; }
+    }
+
+    public class Invitedusermessageinfo
+    {
+        public string customizedMessageBody { get; set; }
+    }
+
+
+
+    public class InvitationResponse
+    {
+        public Inviteduser invitedUser { get; set; }
+    }
+
+
+    public class Inviteduser
+    {
+        public string id { get; set; }
+    }
+
+
 }

@@ -60,34 +60,41 @@ namespace TeamsAdmin.Helper
         {
             foreach (var teamDetails in teamDetailsList)
             {
-                var groupId = await CreateGroupAsyn(token, teamDetails.TeamName, teamDetails.MemberEmails.FirstOrDefault());
-                if (IsValidGuid(groupId))
+                if (teamDetails.MemberEmails.Count>0)
                 {
-                    await context.PostAsync($"Created O365 group for '{teamDetails.TeamName}'. Now, creating team which may take some time.");
-
-                    var retryCount = 4;
-                    string teamId = null;
-                    while (retryCount > 0)
+                    var groupId = await CreateGroupAsyn(token, teamDetails.TeamName, teamDetails.MemberEmails.FirstOrDefault());
+                    if (IsValidGuid(groupId))
                     {
-                        teamId = await CreateTeamAsyn(token, groupId);
-                        if (IsValidGuid(teamId))
-                        {
-                            await context.PostAsync($" '{teamDetails.TeamName}' Team created successfully.");
-                            break;
-                        }
-                        else
-                        {
-                            teamId = null;
-                        }
-                        retryCount--;
-                        await Task.Delay(9000);
-                    }
+                        await context.PostAsync($"Created O365 group for '{teamDetails.TeamName}'. Now, creating team which may take some time.");
 
-                    await CreateTeamAndChannels(context, token, teamDetails, teamId);
+                        var retryCount = 4;
+                        string teamId = null;
+                        while (retryCount > 0)
+                        {
+                            teamId = await CreateTeamAsyn(token, groupId);
+                            if (IsValidGuid(teamId))
+                            {
+                                await context.PostAsync($" '{teamDetails.TeamName}' Team created successfully.");
+                                break;
+                            }
+                            else
+                            {
+                                teamId = null;
+                            }
+                            retryCount--;
+                            await Task.Delay(9000);
+                        }
+
+                        await CreateTeamAndChannels(context, token, teamDetails, teamId);
+                    }
+                    else
+                    {
+                        await context.PostAsync($"Failed to create O365 Group due to internal error. Please try again later.");
+                    }
                 }
                 else
                 {
-                    await context.PostAsync($"Failed to create O365 Group due to internal error. Please try again later.");
+                    await context.PostAsync($"Failed to create O365 Group. We should have at least one owner while creating Team. Guest users are not allowed to be the owners.");
                 }
             }
         }
@@ -128,6 +135,16 @@ namespace TeamsAdmin.Helper
                         await context.PostAsync($"Failed to add {memberEmailId} to {teamDetails.TeamName}. Check if user is already part of this team.");
                 }
 
+                //Add Guest Users
+
+                foreach (var guestMemberId in teamDetails.GuestEmails)
+                {
+                    var result = await AddGuestUserTeam(token, teamId, guestMemberId);
+
+                    if (!result)
+                        await context.PostAsync($"Failed to send invitation to {guestMemberId}");
+                }
+
                 await context.PostAsync($"Channels, Members Added successfully for '{teamDetails.TeamName}' team.");
             }
             else
@@ -149,6 +166,31 @@ namespace TeamsAdmin.Helper
             if (userId  != null)
                 return await AddTeamMemberAsync(token, teamId, userId);
             return false;
+        }
+
+        private async Task<bool> AddGuestUserTeam(string token, string teamId, string userEmailId)
+        {
+            var userId = await GetUserId(token, userEmailId);
+            if (!string.IsNullOrEmpty(userId))
+            {
+                return await AddTeamMemberAsync(token, teamId, userId);
+            }
+            else 
+            {
+                var guestUserId = await GetGuestUserId(token, userEmailId);
+                if (guestUserId != null)
+                {
+                    return await AddTeamMemberAsync(token, teamId, guestUserId);
+                }
+                else
+                {
+                    return false;
+                }
+                
+
+            }
+            
+            
         }
 
         bool IsValidGuid(string guid)
@@ -259,6 +301,30 @@ namespace TeamsAdmin.Helper
             }
         }
 
+        private static async Task<string> SendInvitationToGuestUser(string accessToken, string endpoint, string groupInfo)
+        {
+            using (var client = new HttpClient())
+            {
+                using (var request = new HttpRequestMessage(HttpMethod.Post, endpoint))
+                {
+                    request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                    request.Content = new StringContent(groupInfo, Encoding.UTF8, "application/json");
+
+                    using (HttpResponseMessage response = await client.SendAsync(request))
+                    {
+                        if (response.IsSuccessStatusCode)
+                        {
+
+                            var GuestUserInfo = JsonConvert.DeserializeObject<InvitationResponse>(await response.Content.ReadAsStringAsync());
+                            if(GuestUserInfo!=null)
+                                return GuestUserInfo.invitedUser.id;
+                        }
+                        return null;
+                    }
+                }
+            }
+        }
         private static async Task<string> PutRequest(string accessToken, string endpoint, string groupInfo)
         {
             using (var client = new HttpClient())
@@ -455,5 +521,24 @@ namespace TeamsAdmin.Helper
                 }
             }
         }
+
+
+        public async Task<string> GetGuestUserId(
+           string accessToken, string userEmailId)
+        {
+            string endpoint = GraphRootUri + "invitations";
+            InvitationRequest objInvitation = new InvitationRequest()
+            {
+                invitedUserEmailAddress=userEmailId,
+                sendInvitationMessage=true,
+                inviteRedirectUrl="https://teams.microsoft.com",
+                invitedUserMessageInfo=new Invitedusermessageinfo()
+                {
+                    customizedMessageBody="Welcome to Teams"
+                }
+            };
+            return await SendInvitationToGuestUser(accessToken, endpoint, JsonConvert.SerializeObject(objInvitation));
+        }
+
     }
 }
