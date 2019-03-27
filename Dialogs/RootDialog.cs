@@ -164,7 +164,7 @@ namespace Microsoft.Bot.Sample.TeamsAdmin.Dialogs
                     if (File.Exists(filePath))
                     {
                         string emailId = await GetUserEmailId(activity);
-                        string domainName = emailId.Split('@').LastOrDefault();
+                        string domainName = emailId.Split('@').LastOrDefault().ToLower();
                         var teamDetails = ExcelHelper.GetAddTeamDetails(filePath, domainName);
                         if (teamDetails == null)
                         {

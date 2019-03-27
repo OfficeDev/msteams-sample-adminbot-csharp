@@ -71,7 +71,7 @@ namespace TeamsAdmin.Helper
                             
                             //if(UserEmailId[1].Contains())
                             var allmembers = row[2].ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).
-                                                Select(user => user.Trim()).ToList();
+                                                Select(user => user.Trim().ToLower()).ToList();
                             //Checking Domain Name
                             teamDetails.MemberEmails = allmembers.Where(g => g.Contains(domainName)).ToList();
 
