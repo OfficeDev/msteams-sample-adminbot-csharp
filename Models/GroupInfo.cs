@@ -54,6 +54,9 @@ namespace TeamsAdmin.Models
 
     public class AllTeams
     {
+        [JsonProperty("@odata.nextLink")]
+        public string odatanextLink { get; set; }
+
         public List<GroupInfo> value { get; set; }
     }
 

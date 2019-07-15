@@ -432,10 +432,10 @@ namespace TeamsAdmin.Helper
         /// </summary>
         /// <param name="accessToken">Access token to validate user</param>
         /// <returns></returns>
-        public async Task<List<GroupInfo>> GetAllTeams(string accessToken)
+        public async Task<List<GroupInfo>> GetAllTeams(string accessToken,  string nextUrl = null)
         {
-            string endpoint = GraphRootUri + $"/groups?$filter=resourceProvisioningOptions/Any(x:x eq 'Team')&$select=id,displayName";
-
+            string endpoint = string.IsNullOrEmpty(nextUrl) ? GraphRootUri + $"/groups?$filter=resourceProvisioningOptions/Any(x:x eq 'Team')&$select=id,displayName" :  nextUrl;
+            List<GroupInfo> allTeamsInTenant = new List<GroupInfo>();
             using (var client = new HttpClient())
             {
                 using (var request = new HttpRequestMessage(HttpMethod.Get, endpoint))
@@ -450,8 +450,16 @@ namespace TeamsAdmin.Helper
                             var json = JObject.Parse(await response.Content.ReadAsStringAsync());
                             try
                             {
-                                var createdGroupInfo = JsonConvert.DeserializeObject<AllTeams>(response.Content.ReadAsStringAsync().Result);
-                                return createdGroupInfo.value;
+                                var allTeams = JsonConvert.DeserializeObject<AllTeams>(response.Content.ReadAsStringAsync().Result);
+
+                                if (!string.IsNullOrEmpty(allTeams.odatanextLink))
+                                {
+                                    var teams = await GetAllTeams(accessToken, allTeams.odatanextLink);
+                                    allTeamsInTenant.AddRange(teams);
+                                }
+                                allTeamsInTenant.AddRange(allTeams.value);
+
+                                return allTeamsInTenant;
                             }
                             catch (Exception)
                             {
