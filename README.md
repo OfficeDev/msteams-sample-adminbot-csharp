@@ -8,7 +8,7 @@ description: "TeamsAdminBot is a bot which allows admin to create teams, channel
 urlFragment: teams-admin-bot
 extensions:
   contentType: samples
-  createdDate: 7/26/2018 9:06:01 AM
+  createdDate: "7/26/2018 9:06:01 AM"
 ---
 
 # TeamsAdminBot
