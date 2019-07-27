@@ -21,7 +21,7 @@ TeamsAdminBot is a bot which allows admin to create teams, channels & add member
 
 There is a deployed demo instance of [TeamsAdminBot](https://teamsadminbot.azurewebsites.net) that anyone can talk to.
 
-1. In order to try this bot please [sideload](https://docs.microsoft.com/en-us/microsoftteams/platform/concepts/apps/apps-upload#upload-your-package-into-a-team-using-the-store) the package present at `~\Manifest\TeamAdminBot.zip`.
+1. In order to try this bot please [sideload](https://docs.microsoft.com/microsoftteams/platform/concepts/apps/apps-upload#upload-your-package-into-a-team-using-the-store) the package present at `~\Manifest\TeamAdminBot.zip`.
 2. Bot will send welcome message with options to create new teams or add members to existing.
 3. You need to login before bot creates teams for you.
 4. Once login is successful, click on create/modify teams button.
