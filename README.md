@@ -4,13 +4,17 @@ products:
 - office-365
 languages:
 - csharp
+description: "TeamsAdminBot is a bot which allows admin to create teams, channels & add members dynamically."
+urlFragment: teams-admin-bot
 extensions:
   contentType: samples
   createdDate: 7/26/2018 9:06:01 AM
 ---
-## What is TeamsAdminBot?
+
+# TeamsAdminBot
 
 TeamsAdminBot is a bot which allows admin to create teams, channels & add members dynamically.
+
 >**Note**: Currently, this code does not support adding Guest/Freemium users.
 
 ## Teams Admin Bot demo instance
