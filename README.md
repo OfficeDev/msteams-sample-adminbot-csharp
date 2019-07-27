@@ -46,7 +46,7 @@ This guide is written for an [Azure](https://azure.microsoft.com) oriented as it
 5. Update '~\Manifest\manifest.json` and replace "id" and "botId" with your app id.
 6. Sideload this zip into any team of your choice using this [guide](https://msdn.microsoft.com/en-us/microsoft-teams/sideload).
 
-# Contributing
+## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
 Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
